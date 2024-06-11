@@ -11,7 +11,7 @@ type DataState = {
 };
 
 export const useData = create<DataState>((set) => ({
-  data: { Revenue: 1250, Customers: 50 },
+  data: { Revenue: 1250, Customers: 50, Cost: 99 },
   setData: ({ key, value }) =>
     set((state) => ({
       data: {
@@ -32,7 +32,11 @@ type FormulaState = {
 };
 
 export const useFormula = create<FormulaState>((set) => ({
-  formula: { Revenue: "[Revenue]+58" },
+  formula: {
+    Revenue: "[Revenue]+151",
+    Customers: "[Customers]",
+    Cost: "[Cost] * 50",
+  },
   setFormula: ({ key, value }) =>
     set((state) => ({
       formula: {
