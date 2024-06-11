@@ -36,6 +36,7 @@ export const useFormula = create<FormulaState>((set) => ({
     Revenue: "[Revenue]+151",
     Customers: "[Customers]",
     Cost: "[Cost] * 50",
+    "Revenue + Cost": "[Revenue]+[Cost]",
   },
   setFormula: ({ key, value }) =>
     set((state) => ({

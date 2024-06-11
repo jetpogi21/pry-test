@@ -8,7 +8,10 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import { cn } from "@/lib/utils";
 import { ChevronsUpDown } from "lucide-react";
+import React from "react";
+import { useState } from "react";
 
 const extractFunctionText = (formulaItem: string) => {
   // Extracting the text between square brackets
@@ -20,16 +23,46 @@ const extractFunctionText = (formulaItem: string) => {
 function splitStringIntoArrays(input: string): string[] {
   const result = [];
   let baseKey: string[] = [];
+  let currentIndex = 0;
   for (const char of input) {
     if (char === "[" || baseKey[0] === "[") {
+      if (result.length === 0) {
+        result.push("");
+      }
       baseKey.push(char);
       if (char === "]") {
         result.push(baseKey.join(""));
+        let nextValidCharacter = "";
+        for (let i = currentIndex + 1; i < input.length; i++) {
+          if (input[i] !== "") {
+            nextValidCharacter = input[i];
+            break;
+          }
+        }
+
+        if (nextValidCharacter === "") {
+          result.push("");
+        }
+
         baseKey = [];
       }
     } else {
       baseKey.push(char);
+      let nextValidCharacter = "";
+      for (let i = currentIndex + 1; i < input.length; i++) {
+        if (input[i] !== "") {
+          nextValidCharacter = input[i];
+          break;
+        }
+      }
+
+      if (nextValidCharacter === "[") {
+        result.push(baseKey.join(""));
+        baseKey = [];
+      }
     }
+
+    currentIndex = currentIndex + 1;
   }
 
   if (baseKey.length) {
@@ -43,7 +76,23 @@ const AccordionComponent = (props: { item: [string, Formula[string]] }) => {
   const formulaString = props.item[1];
   const data = useData((state) => state.data);
   const formulaValue = evaluateExpression(formulaString, data);
-  const formulaArray = splitStringIntoArrays(formulaString);
+
+  const [formulaArray, setFormulaArray] = useState(() =>
+    splitStringIntoArrays(formulaString)
+  );
+
+  const setFormula = useFormula((state) => state.setFormula);
+
+  const handleInputChange = (index: number, input: string) => {
+    const newFormulaArray = formulaArray.map((item, idx) =>
+      idx === index ? input : item
+    );
+    setFormulaArray(newFormulaArray);
+  };
+
+  const handleSubmit = () => {
+    setFormula({ key: props.item[0], value: formulaArray.join("") });
+  };
 
   return (
     <div className="w-full border p-4">
@@ -64,23 +113,38 @@ const AccordionComponent = (props: { item: [string, Formula[string]] }) => {
         <div className="pl-11">{formatWithComma(formulaValue)}</div>
         <CollapsibleContent>
           <div className="pl-11 py-2">
-            <div className="flex flex-wrap border rounded-sm p-2 gap-2">
-              {formulaArray.map((formulaItem) => {
+            <div className="flex flex-wrap border rounded-sm p-2 gap-1">
+              {formulaArray.map((formulaItem, index) => {
                 const extractedKey = extractFunctionText(formulaItem);
-                return extractedKey ? (
-                  <div className="border p-2">
-                    {extractFunctionText(formulaItem)}
-                  </div>
-                ) : (
-                  <input
-                    className="ring-0 focus:outline-none"
-                    value={formulaItem}
-                  />
+                return (
+                  <React.Fragment key={index}>
+                    {extractedKey ? (
+                      <div className="border p-2">
+                        {extractFunctionText(formulaItem)}
+                      </div>
+                    ) : (
+                      <form
+                        className="flex"
+                        onSubmit={(e) => {
+                          e.preventDefault();
+                          handleSubmit();
+                        }}
+                      >
+                        <input
+                          className={cn(
+                            "ring-0 focus:outline-none text-center"
+                          )}
+                          style={{ width: `${formulaItem.length + 1}ch` }}
+                          value={formulaItem}
+                          onChange={(e) =>
+                            handleInputChange(index, e.currentTarget.value)
+                          }
+                        />
+                      </form>
+                    )}
+                  </React.Fragment>
                 );
               })}
-              {extractFunctionText(formulaArray[formulaArray.length - 1]) ? (
-                <input className="ring-0 focus:outline-none" />
-              ) : null}
             </div>
           </div>
         </CollapsibleContent>
@@ -115,7 +179,7 @@ export const Home = () => {
             );
           })
         ) : (
-          <div>Currently there's no base data</div>
+          <div>Currently there&apos;s no base data</div>
         )}
       </div>
       <div className="flex flex-col gap-2 w-full">
@@ -131,7 +195,7 @@ export const Home = () => {
             })}
           </div>
         ) : (
-          <div>Currently there's no formula</div>
+          <div>Currently there&apos;s no formula</div>
         )}
       </div>
     </div>
